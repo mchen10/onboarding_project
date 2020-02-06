@@ -16,6 +16,9 @@ module.exports.add = (event, context, callback) => {
     .then(res => {
       callback(null, {
         statusCode: 200,
+        headers: {
+          "Access-Control-Allow-Origin": "*"
+        },
         body: JSON.stringify({
           message: `Sucessfully submitted employee with name ${name} and email ${email}`,
           employeeId: res.id
@@ -26,6 +29,9 @@ module.exports.add = (event, context, callback) => {
       console.log(err);
       callback(null, {
         statusCode: 500,
+        headers: {
+          "Access-Control-Allow-Origin": "*"
+        },
         body: JSON.stringify({
           message: `Unable to submit employee with name ${name} and email ${email}`,
         })
@@ -52,4 +58,59 @@ const employeeInfo = (name, email) => {
     submittedAt: timestamp,
     updatedAt: timestamp,
   };
+};
+
+
+module.exports.list = (event, context, callback) => {
+  var params = {
+      TableName: process.env.EMPLOYEE_TABLE,
+      ExpressionAttributeNames: {"#n": "name"},
+      ProjectionExpression: "id, #n, email"
+  };
+  console.log("Scanning Employee table.");
+  const onScan = (err, data) => {
+      if (err) {
+          console.log('Scan failed to load data. Error JSON:', JSON.stringify(err, null, 2));
+          callback(err);
+      } else {
+          console.log("Scan succeeded.");
+          return callback(null, {
+              statusCode: 200,
+              headers: {
+                "Access-Control-Allow-Origin": "*"
+              },
+              body: JSON.stringify({
+                employees: data.Items
+              })
+          });
+      }
+  };
+  dynamoDb.scan(params, onScan);
+};
+
+module.exports.delete = (event, context, callback) => {
+  const requestBody = JSON.parse(event.body);
+
+  const params = {
+    TableName: process.env.EMPLOYEE_TABLE,
+    Key: {
+      id: requestBody.id,
+    },
+  };
+
+  dynamoDb.delete(params).promise()
+    .then(result => {
+      const response = {
+        statusCode: 200,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
+      };
+      callback(null, response);
+    })
+    .catch(error => {
+      console.error(error);
+      callback(new Error('Couldn\'t delete candidate.'));
+      return;
+    });
 };

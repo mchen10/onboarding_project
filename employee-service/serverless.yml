@@ -15,6 +15,7 @@ provider:
         - dynamodb:Scan
         - dynamodb:GetItem
         - dynamodb:PutItem
+        - dynamodb:DeleteItem
       Resource: "*"
 functions:
   addEmployee:
@@ -25,6 +26,23 @@ functions:
       - http:
           path: employee
           method: post
+  listEmployees:
+    handler: api/employee.list
+    memorySize: 128
+    description: List all employees
+    events:
+      - http:
+          path: employee
+          method: get
+  deleteEmployees:
+    handler: api/employee.delete
+    memorySize: 128
+    description: Delete an employee
+    events:
+      - http:
+          path: employee
+          method: delete
+          cors: true
 resources:
   Resources:
     EmployeesDynamoDbTable:

@@ -29,6 +29,9 @@ export default {
     EmployeeForm,
     AdminLogin,
   },
+  mounted() {
+    this.getEmployees()
+  },
   data() {
     return {
       jobs: [
@@ -45,46 +48,43 @@ export default {
           title:"Janitor",
         },
       ],
-      employees: [
-        {
-          id: 1,
-          name: 'Richard Hendricks',
-          email: 'richard@piedpiper.com',
-          job: 'Accountant',
-        },
-        {
-          id: 2,
-          name: 'Bertram Gilfoyle',
-          email: 'gilfoyle@piedpiper.com',
-          job: 'Software Engineer',
-        },
-        {
-          id: 3,
-          name: 'Dinesh Chugtai',
-          email: 'dinesh@piedpiper.com',
-          job: 'Janitor',
-        },
-      ],
+      employees: [],
       admin: false,
     }
   },
   methods: {
-    addEmployee(employee) {
-      console.log(employee.name)
-      const lastId =
-        this.employees.length > 0
-          ? this.employees[this.employees.length - 1].id
-          : 0;
-      const id = lastId + 1;
-      const newEmployee = { ...employee, id };
-
-      this.employees = [...this.employees, newEmployee];
+    async getEmployees() {
+      try {
+        const response = await fetch("https://l56k7urwq2.execute-api.us-east-1.amazonaws.com/dev/employee")
+        const data = await response.json()
+        this.employees = data["employees"]
+      } catch (error) {
+        console.error(error)
+      }
     },
-    deleteEmployee(id) {
-      console.log(id)
-      this.employees = this.employees.filter(
-        employee => employee.id !== id
-      )
+    async addEmployee (employee) {
+      try {
+        const response = await fetch("https://l56k7urwq2.execute-api.us-east-1.amazonaws.com/dev/employee", {
+          method: 'POST',
+          body: JSON.stringify(employee)
+        })
+        const data = await response.json()
+        const newEmployee = {...employee, "id": data["employeeId"]}
+        this.employees = [...this.employees, newEmployee]
+        console.log(this.employees)
+      } catch (error) {
+        console.error(error)
+      }
+    },
+    async deleteEmployee(id) {
+      try {
+        await fetch(`https://l56k7urwq2.execute-api.us-east-1.amazonaws.com/dev/employee/${id}`, {
+          method: "DELETE"
+        });
+        this.employees = this.employees.filter(employee => employee.id !== id);
+      } catch (error) {
+        console.error(error);
+      }
     },
     editEmployee(id, updatedEmployee) {
       this.employees = this.employees.map(employee =>
